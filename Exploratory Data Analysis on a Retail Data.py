@@ -56,7 +56,8 @@ formatlara_gore_fis_tutarlari = satış_datası.groupby('MAGAZA_FORMAT_KODU').ap
 print(formatlara_gore_fis_tutarlari)
 
 
-###print(formatlara_gore_fis_tutarlari[['min', 'mean', '50%', 'max']])
+print(formatlara_gore_fis_tutarlari[['min', 'mean', '50%', 'max']])
+print(formatlara_gore_fis_tutarlari.describe()) ######for statistically describing the data of invoices.
     
 
 
@@ -71,11 +72,9 @@ print(urun_kategori_verisi)
 
 # In[32]:
 
-
-# Join the data frames on common keys
 joined_data = urun_kategori_verisi.merge(satış_datası, on='URUN_KODU')
 
-# Group by 'REYON_ADI' to get total fiş sayısı and total harcama tutarı for each reyon
+
 reyon_bazinda_analiz = joined_data.groupby('REYON_ADI').agg(
     ToplamFisSayisi=('FIS_ID', 'nunique'),
     ToplamHarcamaTutari=('URUN_TUTARI', lambda x: (x * joined_data.loc[x.index, 'URUN_ADEDI']).sum())
@@ -85,14 +84,13 @@ print(reyon_bazinda_analiz)
 print()
 print()
 
-# Find the reyon with the highest ciro pay
 en_yuksek_ciro_reyon = reyon_bazinda_analiz['ToplamHarcamaTutari'].idxmax()
 print("En yüksek ciro reyon "+str(en_yuksek_ciro_reyon))
 
-# Filter the data for the reyon with the highest ciro pay
+
 highest_ciro_reyon_data = joined_data[joined_data['REYON_ADI'] == en_yuksek_ciro_reyon]
 
-# Group by 'AILE_ADI' to get total fiş sayısı and total harcama tutarı for each aile grupu within the reyon
+
 aile_grubu_bazinda_analiz = highest_ciro_reyon_data.groupby('AILE_ADI').agg(
     ToplamFisSayisi=('FIS_ID', 'nunique'),
     ToplamHarcamaTutari=('URUN_TUTARI', lambda x: (x * highest_ciro_reyon_data.loc[x.index, 'URUN_ADEDI']).sum())
@@ -102,27 +100,26 @@ print()
 print(aile_grubu_bazinda_analiz)
 
 
-# Find the aile grupu with the highest ciro pay
+
 en_yuksek_ciro_aile = aile_grubu_bazinda_analiz['ToplamHarcamaTutari'].idxmax()
 
-# Filter the data for the aile grupu with the highest ciro pay within the reyon
+
 highest_ciro_aile_data = highest_ciro_reyon_data[highest_ciro_reyon_data['AILE_ADI'] == en_yuksek_ciro_aile]
 
-# Calculate the total ciro for the aile grupu (family group) considering quantity
+
 total_aile_ciro = (highest_ciro_aile_data['URUN_TUTARI'] * highest_ciro_aile_data['URUN_ADEDI']).sum()
 
-# Calculate ciro penetrasyonu for each ürün within the aile grupu
+
 ciro_penetrasyonu = highest_ciro_aile_data.groupby('URUN_ISMI').apply(
     lambda group: (group['URUN_TUTARI'] * group['URUN_ADEDI']).sum() / total_aile_ciro
 )
 
-# Calculate total number of unique receipts for the highest revenue Aile Grubu
+
 total_aile_receipts = highest_ciro_aile_data['FIS_ID'].nunique()
 
-# Calculate total number of unique receipts for each product in the highest revenue Aile Grubu
+
 product_receipt_counts = highest_ciro_aile_data.groupby('URUN_ISMI')['FIS_ID'].nunique()
 
-# Calculate Basket Penetrasyonu for each product
 basket_penetrasyonu = product_receipt_counts / total_aile_receipts
 
 
