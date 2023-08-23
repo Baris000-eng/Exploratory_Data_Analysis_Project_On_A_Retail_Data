@@ -5,4 +5,5 @@ This is an exploratory data analysis project on a retail data.
 Technologies Used:
 
 1-) Python Programming Language
+
 2-) Jupyter Notebook
